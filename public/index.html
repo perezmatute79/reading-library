@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="My Library">
+<meta name="theme-color" content="#0f0f0f">
+<title>My Reading Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f0f0f;--surface:#1a1a1a;--surface2:#242424;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#f0ece3;--text2:#8a8580;--text3:#5a5650;--accent:#c8a96e;--accent2:#8b6f3e;--red:#e05c5c;--green:#5c9e6e;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif}
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+.header{padding:calc(var(--safe-top) + 16px) 20px 16px;background:var(--bg);border-bottom:0.5px solid var(--border);flex-shrink:0}
+.header-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:500;color:var(--text);letter-spacing:-0.3px}
+.header-sub{font-size:11px;color:var(--text3);margin-top:2px;letter-spacing:0.8px;text-transform:uppercase}
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(80px + var(--safe-bottom))}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:calc(64px + var(--safe-bottom));padding-bottom:var(--safe-bottom);background:var(--surface);border-top:0.5px solid var(--border);display:flex;z-index:100}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;background:none;border:none;color:var(--text3);font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:0.3px;transition:color .15s}
+.nav-item.active{color:var(--accent)}
+.nav-icon{font-size:20px;line-height:1}
+.panel{display:none;padding:20px}.panel.active{display:block}
+.search-wrap{position:relative;margin-bottom:16px}
+.search-wrap input{width:100%;height:48px;padding:0 52px 0 16px;background:var(--surface);border:0.5px solid var(--border2);border-radius:12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;-webkit-appearance:none}
+.search-wrap input::placeholder{color:var(--text3)}
+.search-wrap input:focus{border-color:var(--accent2)}
+.search-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:36px;height:36px;background:var(--accent);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:#0f0f0f}
+.search-btn:active{opacity:.8;transform:translateY(-50%) scale(0.96)}
+.loader{text-align:center;padding:2rem;color:var(--text3);font-size:13px;display:none}
+.loader-dot{display:inline-block;width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 1s infinite;margin:0 2px}
+.loader-dot:nth-child(2){animation-delay:.2s}.loader-dot:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+.err-msg{background:rgba(224,92,92,.12);border:0.5px solid rgba(224,92,92,.3);color:#e05c5c;border-radius:10px;padding:12px 14px;font-size:13px;margin-bottom:14px;display:none}
+.result-card{background:var(--surface);border:0.5px solid var(--border2);border-radius:16px;padding:18px;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.result-card h3{font-family:'Playfair Display',serif;font-size:19px;font-weight:500;line-height:1.3;color:var(--text)}
+.result-author{font-size:13px;color:var(--text2);margin-top:4px}
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;letter-spacing:.2px}
+.badge-gold{background:rgba(200,169,110,.15);color:var(--accent);border:0.5px solid rgba(200,169,110,.3)}
+.badge-green{background:rgba(92,158,110,.15);color:#7cc990;border:0.5px solid rgba(92,158,110,.25)}
+.badge-red{background:rgba(224,92,92,.12);color:#e07878;border:0.5px solid rgba(224,92,92,.2)}
+.badge-neutral{background:var(--surface2);color:var(--text2);border:0.5px solid var(--border)}
+.desc{font-size:13px;color:var(--text2);line-height:1.6;margin:10px 0 14px}
+.buy-links{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.buy-link{display:block;padding:10px 12px;background:var(--surface2);border:0.5px solid var(--border);border-radius:10px;text-decoration:none;font-size:12px;font-weight:500;color:var(--text2);text-align:center}
+.buy-link:active{background:var(--border2)}
+.buy-link span{display:block;font-size:10px;color:var(--text3);margin-top:2px;font-weight:400}
+.save-section{border-top:0.5px solid var(--border);padding-top:14px}
+.save-section label{font-size:11px;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;display:block;margin-bottom:8px}
+.genre-select{width:100%;height:44px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:0 12px;margin-bottom:12px;-webkit-appearance:none;outline:none}
+.btn-save{width:100%;height:48px;background:var(--accent);border:none;border-radius:12px;color:#0f0f0f;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;letter-spacing:.2px}
+.btn-save:active{opacity:.85;transform:scale(.99)}
+.btn-save:disabled{opacity:.5;cursor:not-allowed}
+.success-msg{background:rgba(92,158,110,.12);border:0.5px solid rgba(92,158,110,.3);color:#7cc990;border-radius:10px;padding:14px;font-size:13px;text-align:center}
+.filter-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.filter-row::-webkit-scrollbar{display:none}
+.filter-chip{flex-shrink:0;height:32px;padding:0 14px;background:var(--surface);border:0.5px solid var(--border);border-radius:20px;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;white-space:nowrap}
+.filter-chip.active{background:var(--accent);color:#0f0f0f;border-color:var(--accent);font-weight:500}
+.book-card{background:var(--surface);border:0.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;animation:fadeIn .2s ease}
+.book-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.book-info{flex:1;min-width:0}
+.book-info h4{font-family:'Playfair Display',serif;font-size:16px;font-weight:500;line-height:1.3;color:var(--text)}
+.book-info p{font-size:12px;color:var(--text3);margin-top:3px}
+.book-card-actions{display:flex;gap:6px}
+.icon-btn{width:32px;height:32px;background:var(--surface2);border:0.5px solid var(--border);border-radius:8px;color:var(--text3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.icon-btn:active{background:var(--border)}
+.book-card-bottom{margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.status-sel{height:32px;background:var(--surface2);border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;padding:0 8px;-webkit-appearance:none;outline:none;flex-shrink:0}
+.stars{display:flex;gap:3px}
+.star{font-size:20px;cursor:pointer;color:var(--text3);line-height:1}
+.star.on{color:var(--accent)}
+.buy-mini{display:flex;gap:6px;margin-left:auto}
+.buy-mini a{font-size:11px;color:var(--accent);text-decoration:none;padding:4px 8px;background:rgba(200,169,110,.1);border-radius:6px;border:0.5px solid rgba(200,169,110,.2)}
+.rec-card{background:var(--surface);border:0.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;animation:fadeIn .2s ease}
+.rec-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.rec-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:500;color:var(--text)}
+.rec-author{font-size:12px;color:var(--text3);margin-top:3px}
+.rec-stars{display:flex;gap:2px;flex-shrink:0}
+.rec-star{font-size:16px;color:var(--text3)}
+.rec-star.on{color:var(--accent)}
+.rec-desc{font-size:12px;color:var(--text2);line-height:1.5;margin-top:8px}
+.rec-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.empty{text-align:center;padding:4rem 2rem;color:var(--text3)}
+.empty-icon{font-size:40px;display:block;margin-bottom:12px;opacity:.4}
+.empty p{font-size:14px}
+.syncing{font-size:11px;color:var(--text3);text-align:right;margin-bottom:8px;min-height:16px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-title">My Library</div>
+    <div class="header-sub">Historical · War · Testimonial</div>
+  </div>
+
+  <div class="content">
+    <!-- SEARCH -->
+    <div id="panel-search" class="panel active">
+      <div class="search-wrap">
+        <input type="text" id="search-input" placeholder="Book title..." autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter'){this.blur();searchBook();}">
+        <button class="search-btn" onclick="searchBook()">&#x2192;</button>
+      </div>
+      <div id="err-msg" class="err-msg"></div>
+      <div id="loader" class="loader">
+        <div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div>
+        <div style="margin-top:10px">Searching...</div>
+      </div>
+      <div id="search-result"></div>
+    </div>
+
+    <!-- LIBRARY -->
+    <div id="panel-library" class="panel">
+      <div class="filter-row">
+        <button class="filter-chip active" onclick="setFilter(this,'')">All</button>
+        <button class="filter-chip" onclick="setFilter(this,'pending')">Pending</button>
+        <button class="filter-chip" onclick="setFilter(this,'purchased')">Purchased</button>
+        <button class="filter-chip" onclick="setFilter(this,'read')">Read</button>
+        <button class="filter-chip" onclick="setFilter(this,'hist')">Histórica</button>
+        <button class="filter-chip" onclick="setFilter(this,'war')">Bélica</button>
+        <button class="filter-chip" onclick="setFilter(this,'test')">Testimonial</button>
+      </div>
+      <div id="sync-status" class="syncing"></div>
+      <div id="library-list"></div>
+    </div>
+
+    <!-- RECOMMENDATIONS -->
+    <div id="panel-recs" class="panel">
+      <p style="font-size:13px;color:var(--text3);margin-bottom:16px">Books you've read &amp; rated — share with friends.</p>
+      <div id="rec-list"></div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-search" onclick="switchTab('search')">
+      <span class="nav-icon">&#x2315;</span>Search
+    </button>
+    <button class="nav-item" id="nav-library" onclick="switchTab('library')">
+      <span class="nav-icon">&#x25A4;</span>Library
+      <span id="lib-badge" style="background:var(--accent);color:#0f0f0f;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:3px;display:none">0</span>
+    </button>
+    <button class="nav-item" id="nav-recs" onclick="switchTab('recs')">
+      <span class="nav-icon">&#x2605;</span>Recs
+    </button>
+  </nav>
+</div>
+
+<script>
+const GENRES=['Novela histórica','Ficción histórica','Novela bélica','Novela testimonial'];
+let activeFilter='';
+let currentBook=null;
+let libCache=null;
+
+// ── Storage via Cloudflare KV (through Worker) ────────────────────
+async function loadLib(){
+  if(libCache) return libCache;
+  try{
+    const r=await fetch('/api/library');
+    libCache=await r.json();
+  }catch(e){ libCache=[]; }
+  return libCache;
+}
+
+async function saveLib(data){
+  libCache=data;
+  updateBadge(data.length);
+  setSyncStatus('Saving...');
+  try{
+    await fetch('/api/library',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    setSyncStatus('Saved ✓');
+    setTimeout(()=>setSyncStatus(''),2000);
+  }catch(e){ setSyncStatus('Save failed — check connection'); }
+}
+
+function setSyncStatus(msg){ const el=document.getElementById('sync-status'); if(el) el.textContent=msg; }
+
+function updateBadge(n){
+  const b=document.getElementById('lib-badge');
+  if(n>0){b.textContent=n;b.style.display='inline';}else{b.style.display='none';}
+}
+
+// ── Claude API via Worker proxy ───────────────────────────────────
+async function callClaude(prompt){
+  const resp=await fetch('/api/claude',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1000,
+      tools:[{"type":"web_search_20250305","name":"web_search"}],
+      messages:[{role:'user',content:prompt}]
+    })
+  });
+  const data=await resp.json();
+  return data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+}
+
+// ── Tab switching ─────────────────────────────────────────────────
+function switchTab(t){
+  ['search','library','recs'].forEach(id=>{
+    document.getElementById('panel-'+id).classList.toggle('active',id===t);
+    document.getElementById('nav-'+id).classList.toggle('active',id===t);
+  });
+  if(t==='library') renderLibrary();
+  if(t==='recs') renderRecs();
+}
+
+// ── Search ────────────────────────────────────────────────────────
+async function searchBook(){
+  const q=document.getElementById('search-input').value.trim();
+  if(!q) return;
+  const enc=encodeURIComponent(q);
+  document.getElementById('loader').style.display='block';
+  document.getElementById('err-msg').style.display='none';
+  document.getElementById('search-result').innerHTML='';
+
+  const prompt=`For the book titled "${q}", return ONLY valid JSON — no markdown, no explanation:
+{"title":"exact title","author":"full name","year":1990,"pages":350,"genre":"best fit from: Novela histórica, Ficción histórica, Novela bélica, Novela testimonial","spanish":true,"amazon_new":"https://www.amazon.com/s?k=${enc}+book","amazon_used":"https://www.amazon.com/s?k=${enc}&rh=p_n_condition-type:2224371011","abebooks":"https://www.abebooks.com/servlet/SearchResults?kn=${enc}","thriftbooks":"https://www.thriftbooks.com/browse/?b.search=${enc}","description":"2 sentence plot summary"}`;
+
+  try{
+    const text=await callClaude(prompt);
+    currentBook=JSON.parse(text.replace(/```json|```/g,'').trim());
+    renderResult(currentBook);
+  }catch(e){
+    document.getElementById('err-msg').textContent='Could not find this book. Try a more specific title.';
+    document.getElementById('err-msg').style.display='block';
+  }
+  document.getElementById('loader').style.display='none';
+}
+
+function renderResult(b){
+  document.getElementById('search-result').innerHTML=`
+<div class="result-card">
+  <h3>${b.title}</h3>
+  <p class="result-author">${b.author}${b.year?' · '+b.year:''}</p>
+  <div class="badges">
+    <span class="badge badge-gold">${b.genre}</span>
+    ${b.pages?`<span class="badge badge-neutral">${b.pages} pages</span>`:''}
+    <span class="badge ${b.spanish?'badge-green':'badge-red'}">${b.spanish?'Available in Spanish':'Not in Spanish'}</span>
+  </div>
+  ${b.description?`<p class="desc">${b.description}</p>`:''}
+  <div class="buy-links">
+    <a class="buy-link" href="${b.amazon_new}" target="_blank">Amazon<span>New — USA</span></a>
+    <a class="buy-link" href="${b.amazon_used}" target="_blank">Amazon<span>Used — USA</span></a>
+    <a class="buy-link" href="${b.abebooks}" target="_blank">AbeBooks<span>New &amp; used</span></a>
+    <a class="buy-link" href="${b.thriftbooks}" target="_blank">ThriftBooks<span>Used</span></a>
+  </div>
+  <div class="save-section">
+    <label>Genre</label>
+    <select class="genre-select" id="save-genre">
+      ${GENRES.map(g=>`<option value="${g}"${g===b.genre?' selected':''}>${g}</option>`).join('')}
+    </select>
+    <button class="btn-save" onclick="saveBook()">Save to library</button>
+  </div>
+</div>`;
+}
+
+async function saveBook(){
+  if(!currentBook) return;
+  const lib=await loadLib();
+  if(lib.find(x=>x.title.toLowerCase()===currentBook.title.toLowerCase())){alert('Already in your library.');return;}
+  currentBook.genre=document.getElementById('save-genre').value;
+  currentBook.status='pending';
+  currentBook.rating=0;
+  currentBook.saved_at=new Date().toISOString().slice(0,10);
+  lib.push(currentBook);
+  await saveLib(lib);
+  document.getElementById('search-result').innerHTML=`<div class="success-msg">&#10003; "${currentBook.title}" saved to your library.</div>`;
+  currentBook=null;
+  document.getElementById('search-input').value='';
+}
+
+// ── Library ───────────────────────────────────────────────────────
+function setFilter(el,f){
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active'); activeFilter=f; renderLibrary();
+}
+
+async function renderLibrary(){
+  const lib=await loadLib();
+  updateBadge(lib.length);
+  let f=lib.slice();
+  if(activeFilter==='pending') f=f.filter(b=>b.status==='pending');
+  else if(activeFilter==='purchased') f=f.filter(b=>b.status==='purchased');
+  else if(activeFilter==='read') f=f.filter(b=>b.status==='read');
+  else if(activeFilter==='hist') f=f.filter(b=>b.genre&&b.genre.toLowerCase().includes('hist'));
+  else if(activeFilter==='war') f=f.filter(b=>b.genre&&b.genre.toLowerCase().includes('bélica'));
+  else if(activeFilter==='test') f=f.filter(b=>b.genre&&b.genre.toLowerCase().includes('test'));
+
+  const el=document.getElementById('library-list');
+  if(!f.length){el.innerHTML=`<div class="empty"><span class="empty-icon">&#x25A1;</span><p>No books here yet.</p></div>`;return;}
+  el.innerHTML=f.map(b=>{
+    const idx=lib.indexOf(b);
+    const stars=[1,2,3,4,5].map(s=>`<span class="star${b.rating>=s?' on':''}" onclick="setRating(${idx},${s})">&#9733;</span>`).join('');
+    return `<div class="book-card">
+  <div class="book-card-top">
+    <div class="book-info"><h4>${b.title}</h4><p>${b.author}${b.year?' · '+b.year:''}${b.pages?' · '+b.pages+'p':''}</p></div>
+    <div class="book-card-actions">
+      <button class="icon-btn" onclick="refreshBook(${idx})" title="Refresh links">&#x21BB;</button>
+      <button class="icon-btn" onclick="removeBook(${idx})" title="Delete">&#x2715;</button>
+    </div>
+  </div>
+  <div class="badges" style="margin-top:8px">
+    <span class="badge badge-gold" style="font-size:10px">${b.genre||''}</span>
+    <span class="badge ${b.spanish?'badge-green':'badge-red'}" style="font-size:10px">${b.spanish?'ES ✓':'No ES'}</span>
+  </div>
+  <div class="book-card-bottom">
+    <select class="status-sel" onchange="updateStatus(${idx},this.value)">
+      <option value="pending"${b.status==='pending'?' selected':''}>Pending</option>
+      <option value="purchased"${b.status==='purchased'?' selected':''}>Purchased</option>
+      <option value="read"${b.status==='read'?' selected':''}>Read</option>
+    </select>
+    <div class="stars">${stars}</div>
+    <div class="buy-mini">
+      <a href="${b.amazon_new}" target="_blank">New</a>
+      <a href="${b.amazon_used}" target="_blank">Used</a>
+    </div>
+  </div>
+</div>`;
+  }).join('');
+}
+
+async function setRating(idx,r){
+  const lib=await loadLib(); lib[idx].rating=r; await saveLib(lib); renderLibrary();
+}
+async function updateStatus(idx,s){
+  const lib=await loadLib(); lib[idx].status=s; await saveLib(lib);
+}
+async function removeBook(idx){
+  if(!confirm('Remove from library?')) return;
+  const lib=await loadLib(); lib.splice(idx,1); await saveLib(lib); renderLibrary();
+}
+async function refreshBook(idx){
+  const lib=await loadLib(); const b=lib[idx];
+  const prompt=`Find current purchase links for the book "${b.title}" by ${b.author} on Amazon USA (new and used), AbeBooks, and ThriftBooks. Return ONLY JSON: {"amazon_new":"url","amazon_used":"url","abebooks":"url","thriftbooks":"url"}`;
+  try{
+    const text=await callClaude(prompt);
+    const upd=JSON.parse(text.replace(/```json|```/g,'').trim());
+    Object.assign(lib[idx],upd);
+    lib[idx].last_checked=new Date().toISOString().slice(0,10);
+    await saveLib(lib); alert('Links updated for "'+b.title+'"'); renderLibrary();
+  }catch(e){alert('Could not refresh. Try again.');}
+}
+
+// ── Recommendations ───────────────────────────────────────────────
+async function renderRecs(){
+  const lib=await loadLib();
+  const rated=lib.filter(b=>b.status==='read'&&b.rating>0).sort((a,b)=>b.rating-a.rating);
+  const el=document.getElementById('rec-list');
+  if(!rated.length){el.innerHTML=`<div class="empty"><span class="empty-icon">&#9733;</span><p>Rate finished books to build your recommendation list.</p></div>`;return;}
+  el.innerHTML=rated.map(b=>`
+<div class="rec-card">
+  <div class="rec-top">
+    <div><div class="rec-title">${b.title}</div><div class="rec-author">${b.author}${b.year?' · '+b.year:''}</div></div>
+    <div class="rec-stars">${[1,2,3,4,5].map(s=>`<span class="rec-star${b.rating>=s?' on':''}">&#9733;</span>`).join('')}</div>
+  </div>
+  ${b.description?`<p class="rec-desc">${b.description}</p>`:''}
+  <div class="rec-meta">
+    <span class="badge badge-gold" style="font-size:10px">${b.genre||''}</span>
+    <span class="badge ${b.spanish?'badge-green':'badge-red'}" style="font-size:10px">${b.spanish?'Available in Spanish':'Not in Spanish'}</span>
+    ${b.pages?`<span class="badge badge-neutral" style="font-size:10px">${b.pages} pages</span>`:''}
+  </div>
+</div>`).join('');
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+(async()=>{ const lib=await loadLib(); updateBadge(lib.length); })();
+</script>
+</body>
+</html>
